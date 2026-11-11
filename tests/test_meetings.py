@@ -173,3 +173,36 @@ def test_summary_starts_with_the_childs_name(meetings):
         "August: Skole-hjem-samtale",
         "August: Samtale med AKT",
     ]
+
+
+def test_schoolschedule_window_starts_on_monday():
+    from custom_components.aula.client import schoolschedule_window
+
+    # Wednesday 2026-11-11
+    start, end = schoolschedule_window(datetime.datetime(2026, 11, 11, 19, 0, tzinfo=UTC))
+    assert start == "2026-11-09 00:00:00.0000+0000"
+    assert end == "2026-11-25 00:00:00.0000+0000"
+
+
+def test_schoolschedule_window_on_monday_starts_today():
+    from custom_components.aula.client import schoolschedule_window
+
+    start, _ = schoolschedule_window(datetime.datetime(2026, 11, 9, 6, 0, tzinfo=UTC))
+    assert start == "2026-11-09 00:00:00.0000+0000"
+
+
+def test_schoolschedule_window_on_sunday_keeps_the_past_week():
+    from custom_components.aula.client import schoolschedule_window
+
+    start, end = schoolschedule_window(datetime.datetime(2026, 11, 15, 12, 0, tzinfo=UTC))
+    assert start == "2026-11-09 00:00:00.0000+0000"
+    assert end == "2026-11-29 00:00:00.0000+0000"
+
+
+def test_schoolschedule_window_stays_within_aula_span_limit():
+    from custom_components.aula.client import schoolschedule_window
+
+    for day in range(9, 16):  # every day, Monday to Sunday
+        start, end = schoolschedule_window(datetime.datetime(2026, 11, day, 12, 0, tzinfo=UTC))
+        span = datetime.date.fromisoformat(end[:10]) - datetime.date.fromisoformat(start[:10])
+        assert span.days <= CALENDAR_MAX_SPAN_DAYS

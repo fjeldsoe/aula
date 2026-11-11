@@ -79,6 +79,19 @@ def decode_mu_deeplink(url):
         return None
 
 
+def schoolschedule_window(now, days_ahead=14):
+    """Return the (start, end) strings for the school schedule request.
+
+    Starts on Monday of the current week, so lessons earlier in the week stay
+    in the calendar, and ends ``days_ahead`` days after today. ``now`` must be
+    timezone-aware, so the strings carry an offset.
+    """
+    monday = now - datetime.timedelta(days=now.weekday())
+    end = now + datetime.timedelta(days=days_ahead)
+    fmt = "%Y-%m-%d 00:00:00.0000%z"
+    return monday.strftime(fmt), end.strftime(fmt)
+
+
 def calendar_date_chunks(start, days, max_span=CALENDAR_MAX_SPAN_DAYS):
     """Split ``days`` from ``start`` into (start, end) date pairs Aula accepts."""
     chunks = []
@@ -1586,13 +1599,9 @@ class Client:
             headers = {"content-type": "application/json"}
             if csrf_token:
                 headers["csrfp-token"] = csrf_token
-            start = datetime.datetime.now(datetime.timezone.utc).strftime(
-                "%Y-%m-%d 00:00:00.0000%z"
+            start, end = schoolschedule_window(
+                datetime.datetime.now(datetime.timezone.utc)
             )
-            _end = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-                days=14
-            )
-            end = _end.strftime("%Y-%m-%d 00:00:00.0000%z")
             post_data = (
                 '{"instProfileIds":['
                 + instProfileIds
